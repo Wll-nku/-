@@ -1,79 +1,166 @@
 #include <graphics.h>
 #include <conio.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 
-#define WIDTH 640
-#define HEIGHT 480
-#define PADDLE_WIDTH 80
-#define PADDLE_HEIGHT 10
-#define BALL_RADIUS 10
+// 增大地图大小
+#define WIDTH 800
+#define HEIGHT 600
+#define BLOCK_SIZE 20
+#define MAX_LENGTH 200
 
-int main() {
-    // 初始化图形窗口
-    initgraph(WIDTH, HEIGHT);
+// 蛇的结构体
+struct Snake {
+    int x[MAX_LENGTH];
+    int y[MAX_LENGTH];
+    int length;
+    int direction;
+};
 
-    // 挡板的初始位置
-    int paddleX = (WIDTH - PADDLE_WIDTH) / 2;
-    int paddleY = HEIGHT - PADDLE_HEIGHT - 20;
+// 食物的结构体
+struct Food {
+    int x;
+    int y;
+};
 
-    // 小球的初始位置和速度
-    int ballX = WIDTH / 2;
-    int ballY = HEIGHT / 2;
-    int ballVx = 3;
-    int ballVy = 3;
-
-    while (1) {
-        // 清屏
-        cleardevice();
-
-        // 绘制挡板
-        setfillcolor(YELLOW);
-        fillrectangle(paddleX, paddleY, paddleX + PADDLE_WIDTH, paddleY + PADDLE_HEIGHT);
-
-        // 绘制小球
-        setfillcolor(RED);
-        fillcircle(ballX, ballY, BALL_RADIUS);
-
-        // 小球移动
-        ballX += ballVx;
-        ballY += ballVy;
-
-        // 小球碰到左右边界反弹
-        if (ballX - BALL_RADIUS <= 0 || ballX + BALL_RADIUS >= WIDTH) {
-            ballVx = -ballVx;
+// 判断是否是蛇的身体
+bool isSnakeBody(Snake& snake, int x, int y) {
+    for (int i = 0; i < snake.length; i++) {
+        if (snake.x[i] == x && snake.y[i] == y) {
+            return true;
         }
-        // 小球碰到上边界反弹
-        if (ballY - BALL_RADIUS <= 0) {
-            ballVy = -ballVy;
-        }
-        // 小球碰到挡板反弹
-        if (ballY + BALL_RADIUS >= paddleY && ballX >= paddleX && ballX <= paddleX + PADDLE_WIDTH) {
-            ballVy = -ballVy;
-        }
-        // 小球掉出下边界，游戏结束
-        if (ballY + BALL_RADIUS >= HEIGHT) {
-            break;
-        }
+    }
+    return false;
+}
 
-        // 处理键盘输入，控制挡板移动
-        if (_kbhit()) {
-            char ch = _getch();
-            if (ch == 0xe0) {
-                ch = _getch();
-                if (ch == 75 && paddleX > 0) {  // 左方向键
-                    paddleX -= 10;
+// 初始化蛇
+void initSnake(Snake& snake) {
+    snake.length = 3;
+    snake.direction = 1; // 1: 右 2: 下 3: 左 4: 上
+    for (int i = 0; i < snake.length; i++) {
+        snake.x[i] = (WIDTH / 2 - i * BLOCK_SIZE);
+        snake.y[i] = HEIGHT / 2;
+    }
+}
+
+// 初始化食物
+void initFood(Food& food, Snake& snake) {
+    srand(time(NULL));
+    do {
+        food.x = rand() % (WIDTH / BLOCK_SIZE) * BLOCK_SIZE;
+        food.y = rand() % (HEIGHT / BLOCK_SIZE) * BLOCK_SIZE;
+    } while (isSnakeBody(snake, food.x, food.y));
+}
+
+// 绘制蛇和食物
+void draw(Snake& snake, Food& food) {
+    cleardevice();
+    // 绘制食物
+    setfillcolor(YELLOW);
+    fillrectangle(food.x, food.y, food.x + BLOCK_SIZE, food.y + BLOCK_SIZE);
+    // 绘制蛇
+    setfillcolor(GREEN);
+    for (int i = 0; i < snake.length; i++) {
+        fillrectangle(snake.x[i], snake.y[i], snake.x[i] + BLOCK_SIZE, snake.y[i] + BLOCK_SIZE);
+    }
+}
+
+// 移动蛇
+void moveSnake(Snake& snake) {
+    for (int i = snake.length - 1; i > 0; i--) {
+        snake.x[i] = snake.x[i - 1];
+        snake.y[i] = snake.y[i - 1];
+    }
+    switch (snake.direction) {
+    case 1:
+        snake.x[0] += BLOCK_SIZE;
+        break;
+    case 2:
+        snake.y[0] += BLOCK_SIZE;
+        break;
+    case 3:
+        snake.x[0] -= BLOCK_SIZE;
+        break;
+    case 4:
+        snake.y[0] -= BLOCK_SIZE;
+        break;
+    }
+}
+
+// 检查是否吃到食物
+bool checkEat(Snake& snake, Food& food) {
+    if (snake.x[0] == food.x && snake.y[0] == food.y) {
+        snake.length++;
+        initFood(food, snake);
+        return true;
+    }
+    return false;
+}
+
+// 检查是否撞到墙壁或自己
+bool checkCollision(Snake& snake) {
+    if (snake.x[0] < 0 || snake.x[0] >= WIDTH || snake.y[0] < 0 || snake.y[0] >= HEIGHT) {
+        return true;
+    }
+    for (int i = 1; i < snake.length; i++) {
+        if (snake.x[0] == snake.x[i] && snake.y[0] == snake.y[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// 处理鼠标输入，指引蛇前进
+void handleMouseInput(Snake& snake) {
+    MOUSEMSG msg;
+    while (MouseHit()) {
+        msg = GetMouseMsg();
+        if (msg.uMsg == WM_LBUTTONDOWN) {
+            int clickX = msg.x;
+            int clickY = msg.y;
+            int headX = snake.x[0];
+            int headY = snake.y[0];
+
+            if (abs(clickX - headX) > abs(clickY - headY)) {
+                if (clickX > headX && snake.direction != 3) {
+                    snake.direction = 1;
                 }
-                if (ch == 77 && paddleX + PADDLE_WIDTH < WIDTH) {  // 右方向键
-                    paddleX += 10;
+                else if (clickX < headX && snake.direction != 1) {
+                    snake.direction = 3;
+                }
+            }
+            else {
+                if (clickY > headY && snake.direction != 4) {
+                    snake.direction = 2;
+                }
+                else if (clickY < headY && snake.direction != 2) {
+                    snake.direction = 4;
                 }
             }
         }
+    }
+}
 
-        // 延时
-        Sleep(10);
+int main() {
+    initgraph(WIDTH, HEIGHT);
+    Snake snake;
+    Food food;
+    initSnake(snake);
+    initFood(food, snake);
+
+    while (1) {
+        draw(snake, food);
+        moveSnake(snake);
+        checkEat(snake, food);
+        if (checkCollision(snake)) {
+            break;
+        }
+        handleMouseInput(snake);
+        // 增加延时，减慢蛇的移动速度
+        Sleep(400);
     }
 
-    // 关闭图形窗口
     closegraph();
     return 0;
 }
