@@ -1,0 +1,10 @@
+﻿  food.cpp
+  main.cpp
+C:\Users\wllss\source\repos\大作业02\大作业02\main.cpp(80,15): warning C4244: “参数”: 从“time_t”转换到“unsigned int”，可能丢失数据
+C:\Users\wllss\source\repos\大作业02\大作业02\main.cpp(94,15): warning C4244: “参数”: 从“time_t”转换到“unsigned int”，可能丢失数据
+  snake.cpp
+  ui.cpp
+C:\Users\wllss\source\repos\大作业02\大作业02\ui.cpp(36,5): warning C4102: “drawtext”: 未引用的标签
+C:\Users\wllss\source\repos\大作业02\大作业02\ui.cpp(42,5): warning C4102: “outtextxy”: 未引用的标签
+  正在生成代码...
+  大作业02.vcxproj -> C:\Users\wllss\source\repos\大作业02\x64\Debug\大作业02.exe
