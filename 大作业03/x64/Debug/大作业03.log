@@ -1,0 +1,3 @@
+﻿  main.cpp
+C:\Users\wllss\source\repos\大作业03\大作业03\main.cpp(358,15): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+  大作业03.vcxproj -> C:\Users\wllss\source\repos\大作业03\x64\Debug\大作业03.exe
